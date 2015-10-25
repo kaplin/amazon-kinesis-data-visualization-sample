@@ -92,9 +92,9 @@ public class HttpReferrerStreamWriter {
 
         HttpReferrerPairFactory pairFactory = new HttpReferrerPairFactory(resources, referrers);
 
-        // Creates a stream to write to with 2 shards if it doesn't exist
+        // Creates a stream to write to with 8 shards if it doesn't exist
         StreamUtils streamUtils = new StreamUtils(kinesis);
-        streamUtils.createStreamIfNotExists(streamName, 2);
+        streamUtils.createStreamIfNotExists(streamName, 8);
         LOG.info(String.format("%s stream is ready for use", streamName));
 
         final HttpReferrerKinesisPutter putter = new HttpReferrerKinesisPutter(pairFactory, kinesis, streamName);

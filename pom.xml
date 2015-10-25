@@ -26,8 +26,8 @@
     </licenses>
 
     <properties>
-        <sample-application.name>KinesisDataVisSample-HttpReferrerPairsCounter</sample-application.name>
-        <sample-application.stream>KinesisDataVisSample-HttpReferrerPairs</sample-application.stream>
+        <sample-application.name>SelectivePublishingTest</sample-application.name>
+        <sample-application.stream>SelectivePublishingTest</sample-application.stream>
         <sample-application.counts-table>KinesisDataVisSample-HttpReferrerPairsCounter-Counts</sample-application.counts-table>
         <sample-application.region>us-east-1</sample-application.region>
 
