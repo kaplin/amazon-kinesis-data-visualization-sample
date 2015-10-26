@@ -17,6 +17,7 @@ package com.amazonaws.services.kinesis.samples.datavis.producer;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.util.Random;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -47,6 +48,7 @@ public class HttpReferrerKinesisPutter {
     private ExecutorService executorService = Executors.newFixedThreadPool(10);
     private AtomicInteger sent = new AtomicInteger();
     private AtomicInteger submitted = new AtomicInteger();
+    private Random random = new Random();
 
     public HttpReferrerKinesisPutter(MessageFactory messageFactory, AmazonKinesis kinesis, String streamName) {
         if (messageFactory == null) {
@@ -120,18 +122,21 @@ public class HttpReferrerKinesisPutter {
      */
     private void sendMessage() {
         HealthCheckStateMessage message = messageFactory.create();
-        byte[] bytes;
-        try {
-            bytes = JSON.writeValueAsBytes(message);
-        } catch (IOException e) {
-            LOG.warn("Skipping pair. Unable to serialize: '" + message + "'", e);
-            return;
-        }
+        byte[] bytes = new byte[5440 * 17];
+//        try {
+//            bytes = JSON.writeValueAsBytes(message);
+//        } catch (IOException e) {
+//            LOG.warn("Skipping pair. Unable to serialize: '" + message + "'", e);
+//            return;
+//        }
 
         PutRecordRequest putRecord = new PutRecordRequest();
         putRecord.setStreamName(streamName);
         // We use the resource as the partition key so we can accurately calculate totals for a given resource
         putRecord.setPartitionKey(Integer.toString(message.getStartingSequenceNumber()));
+        for (int i = 0; i < bytes.length; i++) {
+            bytes[i] = (byte) random.nextInt(255);
+        }
         putRecord.setData(ByteBuffer.wrap(bytes));
         // Order is not important for this application so we do not send a SequenceNumberForOrdering
         putRecord.setSequenceNumberForOrdering(null);
