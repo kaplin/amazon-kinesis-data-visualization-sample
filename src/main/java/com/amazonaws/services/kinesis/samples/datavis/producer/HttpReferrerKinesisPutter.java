@@ -44,7 +44,7 @@ public class HttpReferrerKinesisPutter {
 
     private final ObjectMapper JSON = new ObjectMapper();
 
-    private ExecutorService executorService = Executors.newFixedThreadPool(50);
+    private ExecutorService executorService = Executors.newFixedThreadPool(10);
     private AtomicInteger sent = new AtomicInteger();
     private AtomicInteger submitted = new AtomicInteger();
 
