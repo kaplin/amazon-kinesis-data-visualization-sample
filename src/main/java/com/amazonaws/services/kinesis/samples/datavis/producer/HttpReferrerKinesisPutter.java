@@ -46,6 +46,7 @@ public class HttpReferrerKinesisPutter {
 
     private ExecutorService executorService = Executors.newFixedThreadPool(20);
     private AtomicInteger sent = new AtomicInteger();
+    private AtomicInteger submitted = new AtomicInteger();
 
     public HttpReferrerKinesisPutter(MessageFactory messageFactory, AmazonKinesis kinesis, String streamName) {
         if (messageFactory == null) {
@@ -102,13 +103,15 @@ public class HttpReferrerKinesisPutter {
             };
             for (int i = 0; i < messagesToSendPerIteration; i++) {
                 executorService.submit(task);
+                submitted.incrementAndGet();
             }
             if (delayBetweenRecords > 0) {
                 Thread.sleep(unitForDelay.toMillis(delayBetweenRecords));
             }
 
-            LOG.info("Messages sent: " + sent.get());
+            LOG.info("Messages submitted: " + submitted.get() + ", sent " + sent.get());
             sent.set(0);
+            submitted.set(0);
         }
     }
 
