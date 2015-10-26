@@ -69,7 +69,7 @@ public class HttpReferrerKinesisPutter {
      */
     public void sendPairs(long n, long delayBetweenRecords, TimeUnit unitForDelay) throws InterruptedException {
         for (int i = 0; i < n && !Thread.currentThread().isInterrupted(); i++) {
-            sendPair();
+            sendMessage();
             Thread.sleep(unitForDelay.toMillis(delayBetweenRecords));
         }
     }
@@ -86,7 +86,7 @@ public class HttpReferrerKinesisPutter {
      */
     public void sendPairsIndefinitely(long delayBetweenRecords, TimeUnit unitForDelay) throws InterruptedException {
         while (!Thread.currentThread().isInterrupted()) {
-            sendPair();
+            sendMessage();
             if (delayBetweenRecords > 0) {
                 Thread.sleep(unitForDelay.toMillis(delayBetweenRecords));
             }
@@ -96,7 +96,7 @@ public class HttpReferrerKinesisPutter {
     /**
      * Send a single pair to Amazon Kinesis using PutRecord.
      */
-    private void sendPair() {
+    private void sendMessage() {
         HealthCheckStateMessage message = messageFactory.create();
         byte[] bytes;
         try {
