@@ -17,7 +17,10 @@ package com.amazonaws.services.kinesis.samples.datavis.producer;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import com.amazonaws.services.kinesis.samples.datavis.model.HealthCheckStateMessage;
 import org.apache.commons.logging.Log;
@@ -40,6 +43,9 @@ public class HttpReferrerKinesisPutter {
     private String streamName;
 
     private final ObjectMapper JSON = new ObjectMapper();
+
+    private ExecutorService executorService = Executors.newFixedThreadPool(20);
+    private AtomicInteger sent = new AtomicInteger();
 
     public HttpReferrerKinesisPutter(MessageFactory messageFactory, AmazonKinesis kinesis, String streamName) {
         if (messageFactory == null) {
@@ -82,14 +88,27 @@ public class HttpReferrerKinesisPutter {
      *        ignored.
      * @param unitForDelay The unit of time to interpret the provided delay as.
      *
+     * @param messagesToSendPerIteration
      * @throws InterruptedException Interrupted while waiting to send the next pair.
      */
-    public void sendPairsIndefinitely(long delayBetweenRecords, TimeUnit unitForDelay) throws InterruptedException {
+    public void sendMessagesIndefinitely(long delayBetweenRecords, TimeUnit unitForDelay, int messagesToSendPerIteration) throws InterruptedException {
         while (!Thread.currentThread().isInterrupted()) {
-            sendMessage();
+            Runnable task = new Runnable() {
+                @Override
+                public void run() {
+                    sendMessage();
+                    sent.incrementAndGet();
+                }
+            };
+            for (int i = 0; i < messagesToSendPerIteration; i++) {
+                executorService.submit(task);
+            }
             if (delayBetweenRecords > 0) {
                 Thread.sleep(unitForDelay.toMillis(delayBetweenRecords));
             }
+
+            LOG.info("Messages sent: " + sent.get());
+            sent.set(0);
         }
     }
 

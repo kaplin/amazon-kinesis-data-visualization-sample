@@ -17,8 +17,6 @@ package com.amazonaws.services.kinesis.samples.datavis;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
 import com.amazonaws.services.kinesis.samples.datavis.producer.MessageFactory;
@@ -82,11 +80,13 @@ public class HttpReferrerStreamWriter {
 
         final HttpReferrerKinesisPutter putter = new HttpReferrerKinesisPutter(new MessageFactory(), kinesis, streamName);
 
+        ExecutorService es = Executors.newCachedThreadPool();
+
         Runnable pairSender = new Runnable() {
             @Override
             public void run() {
                 try {
-                    putter.sendPairsIndefinitely(DELAY_BETWEEN_RECORDS_IN_MILLIS, TimeUnit.MILLISECONDS);
+                    putter.sendMessagesIndefinitely(10, TimeUnit.SECONDS, 4000000 / 5440);
                 } catch (Exception ex) {
                     LOG.warn("Thread encountered an error while sending records. Records will no longer be put by this thread.",
                             ex);
@@ -94,7 +94,15 @@ public class HttpReferrerStreamWriter {
             }
         };
 
-        ScheduledExecutorService executorService = Executors.newScheduledThreadPool(1);
-        executorService.scheduleAtFixedRate(pairSender, 0, 100, TimeUnit.MILLISECONDS);
+        for (int i = 0; i < numberOfThreads; i++) {
+            es.submit(pairSender);
+        }
+
+        LOG.info(String.format("Sending pairs with a %dms delay between records with %d thread(s).",
+                DELAY_BETWEEN_RECORDS_IN_MILLIS,
+                numberOfThreads));
+
+        es.shutdown();
+        es.awaitTermination(Long.MAX_VALUE, TimeUnit.DAYS);
     }
 }
