@@ -75,7 +75,7 @@ public class HttpReferrerStreamWriter {
 
         // Creates a stream to write to with 8 shards if it doesn't exist
         StreamUtils streamUtils = new StreamUtils(kinesis);
-        streamUtils.createStreamIfNotExists(streamName, 8);
+        streamUtils.createStreamIfNotExists(streamName, 16);
         LOG.info(String.format("%s stream is ready for use", streamName));
 
         final HttpReferrerKinesisPutter putter = new HttpReferrerKinesisPutter(new MessageFactory(), kinesis, streamName);
@@ -97,10 +97,6 @@ public class HttpReferrerStreamWriter {
         for (int i = 0; i < numberOfThreads; i++) {
             es.submit(pairSender);
         }
-
-        LOG.info(String.format("Sending pairs with a %dms delay between records with %d thread(s).",
-                DELAY_BETWEEN_RECORDS_IN_MILLIS,
-                numberOfThreads));
 
         es.shutdown();
         es.awaitTermination(Long.MAX_VALUE, TimeUnit.DAYS);
