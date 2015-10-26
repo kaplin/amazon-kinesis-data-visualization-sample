@@ -15,12 +15,11 @@
 
 package com.amazonaws.services.kinesis.samples.datavis;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
+import com.amazonaws.services.kinesis.samples.datavis.producer.MessageFactory;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -32,7 +31,6 @@ import com.amazonaws.services.kinesis.AmazonKinesis;
 import com.amazonaws.services.kinesis.AmazonKinesisClient;
 import com.amazonaws.services.kinesis.samples.datavis.model.HttpReferrerPair;
 import com.amazonaws.services.kinesis.samples.datavis.producer.HttpReferrerKinesisPutter;
-import com.amazonaws.services.kinesis.samples.datavis.producer.HttpReferrerPairFactory;
 import com.amazonaws.services.kinesis.samples.datavis.utils.SampleUtils;
 import com.amazonaws.services.kinesis.samples.datavis.utils.StreamUtils;
 
@@ -75,29 +73,12 @@ public class HttpReferrerStreamWriter {
         AmazonKinesis kinesis = new AmazonKinesisClient(credentialsProvider, clientConfig);
         kinesis.setRegion(region);
 
-        // The more resources we declare the higher write IOPS we need on our DynamoDB table.
-        // We write a record for each resource every interval.
-        // If interval = 500ms, resource count = 7 we need: (1000/500 * 7) = 14 write IOPS minimum.
-        List<String> resources = new ArrayList<>();
-        resources.add("/index.html");
-
-        // These are the possible referrers to use when generating pairs
-        List<String> referrers = new ArrayList<>();
-        referrers.add("http://www.amazon.com");
-        referrers.add("http://www.google.com");
-        referrers.add("http://www.yahoo.com");
-        referrers.add("http://www.bing.com");
-        referrers.add("http://www.stackoverflow.com");
-        referrers.add("http://www.reddit.com");
-
-        HttpReferrerPairFactory pairFactory = new HttpReferrerPairFactory(resources, referrers);
-
         // Creates a stream to write to with 8 shards if it doesn't exist
         StreamUtils streamUtils = new StreamUtils(kinesis);
         streamUtils.createStreamIfNotExists(streamName, 8);
         LOG.info(String.format("%s stream is ready for use", streamName));
 
-        final HttpReferrerKinesisPutter putter = new HttpReferrerKinesisPutter(pairFactory, kinesis, streamName);
+        final HttpReferrerKinesisPutter putter = new HttpReferrerKinesisPutter(new MessageFactory(), kinesis, streamName);
 
         ExecutorService es = Executors.newCachedThreadPool();
 

@@ -19,6 +19,7 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.concurrent.TimeUnit;
 
+import com.amazonaws.services.kinesis.samples.datavis.model.HealthCheckStateMessage;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -26,7 +27,6 @@ import com.amazonaws.AmazonClientException;
 import com.amazonaws.services.kinesis.AmazonKinesis;
 import com.amazonaws.services.kinesis.model.ProvisionedThroughputExceededException;
 import com.amazonaws.services.kinesis.model.PutRecordRequest;
-import com.amazonaws.services.kinesis.samples.datavis.model.HttpReferrerPair;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
@@ -35,14 +35,14 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 public class HttpReferrerKinesisPutter {
     private static final Log LOG = LogFactory.getLog(HttpReferrerKinesisPutter.class);
 
-    private HttpReferrerPairFactory referrerFactory;
+    private MessageFactory messageFactory;
     private AmazonKinesis kinesis;
     private String streamName;
 
     private final ObjectMapper JSON = new ObjectMapper();
 
-    public HttpReferrerKinesisPutter(HttpReferrerPairFactory pairFactory, AmazonKinesis kinesis, String streamName) {
-        if (pairFactory == null) {
+    public HttpReferrerKinesisPutter(MessageFactory messageFactory, AmazonKinesis kinesis, String streamName) {
+        if (messageFactory == null) {
             throw new IllegalArgumentException("pairFactory must not be null");
         }
         if (kinesis == null) {
@@ -51,7 +51,7 @@ public class HttpReferrerKinesisPutter {
         if (streamName == null || streamName.isEmpty()) {
             throw new IllegalArgumentException("streamName must not be null or empty");
         }
-        this.referrerFactory = pairFactory;
+        this.messageFactory = messageFactory;
         this.kinesis = kinesis;
         this.streamName = streamName;
     }
@@ -97,19 +97,19 @@ public class HttpReferrerKinesisPutter {
      * Send a single pair to Amazon Kinesis using PutRecord.
      */
     private void sendPair() {
-        HttpReferrerPair pair = referrerFactory.create();
+        HealthCheckStateMessage message = messageFactory.create();
         byte[] bytes;
         try {
-            bytes = JSON.writeValueAsBytes(pair);
+            bytes = JSON.writeValueAsBytes(message);
         } catch (IOException e) {
-            LOG.warn("Skipping pair. Unable to serialize: '" + pair + "'", e);
+            LOG.warn("Skipping pair. Unable to serialize: '" + message + "'", e);
             return;
         }
 
         PutRecordRequest putRecord = new PutRecordRequest();
         putRecord.setStreamName(streamName);
         // We use the resource as the partition key so we can accurately calculate totals for a given resource
-        putRecord.setPartitionKey(pair.getResource());
+        putRecord.setPartitionKey(Integer.toString(message.getStartingSequenceNumber()));
         putRecord.setData(ByteBuffer.wrap(bytes));
         // Order is not important for this application so we do not send a SequenceNumberForOrdering
         putRecord.setSequenceNumberForOrdering(null);
